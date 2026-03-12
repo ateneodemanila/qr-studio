@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ateneo QR Studio | Official Branding Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        /** * IMPORTANT: You must replace these placeholder values with your actual 
+         * Firebase project credentials found in your Firebase Console.
+         * The current error "auth/api-key-not-valid" occurs because these are placeholders.
+         */
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9VAP0riwWCNsfgofe7dNmZ3TyrGfXjuY",
+  authDomain: "ateneo-qr-studio.firebaseapp.com",
+  projectId: "ateneo-qr-studio",
+  storageBucket: "ateneo-qr-studio.firebasestorage.app",
+  messagingSenderId: "215357146258",
+  appId: "1:215357146258:web:64faf5458333bc6190d24b",
+  measurementId: "G-8Z1V73J3L7"
+        };
+
+        // Initialize Firebase with error checking
+        let db = null;
+        let auth = null;
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Only attempt sign-in if the API key has been changed from the placeholder
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                signInAnonymously(auth).catch(err => {
+                    console.error("Auth error:", err);
+                });
+            } else {
+                console.warn("Firebase is in 'Demo Mode'. Logging is disabled until a valid API Key is provided.");
+            }
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+        }
+
+        window.saveLogToFirestore = async (email, url) => {
+            // Prevent crashes if Firebase isn't configured yet
+            if (!db || firebaseConfig.apiKey === "YOUR_API_KEY") {
+                console.log("Offline Mode: Log would have been saved for", email);
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "qr_logs"), {
+                    userEmail: email,
+                    targetUrl: url,
+                    timestamp: serverTimestamp(),
+                    device: navigator.userAgent
+                });
+            } catch (e) {
+                console.error("Error saving log: ", e);
+            }
+        };
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        :root {
+            --ateneo-blue: #003366;
+            --ateneo-gold: #ceb888;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; }
+        .ateneo-bg-blue { background-color: var(--ateneo-blue); }
+        .ateneo-text-blue { color: var(--ateneo-blue); }
+        .ateneo-border-blue { border-color: var(--ateneo-blue); }
+        .glass-card { background: white; border: 1px solid rgba(0, 0, 0, 0.05); }
+        
+        /* Custom Checkbox/Radio Styling */
+        .logo-option input:checked + div {
+            border-color: var(--ateneo-blue);
+            background-color: #f0f7ff;
+            ring: 2px;
+            ring-color: var(--ateneo-blue);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- INSTITUTIONAL HEADER -->
+    <header class="ateneo-bg-blue text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" class="h-10 w-10 brightness-0 invert" alt="Ateneo Logo">
+                <div class="border-l border-white/30 pl-4">
+                    <h1 class="text-lg font-bold tracking-tight leading-tight">ATENEO DE MANILA UNIVERSITY</h1>
+                    <p class="text-[10px] uppercase tracking-[0.2em] opacity-80">Information Technology Services</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex space-x-6 text-sm font-medium">
+                <a href="#" class="hover:text-[#ceb888] transition-colors">Resources</a>
+                <a href="#" class="hover:text-[#ceb888] transition-colors">Help Desk</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow flex items-center justify-center p-6">
+        <div class="glass-card w-full max-w-4xl rounded-2xl overflow-hidden shadow-xl flex flex-col md:flex-row">
+            
+            <!-- Left Side: Inputs -->
+            <div class="p-8 md:w-3/5 border-b md:border-b-0 md:border-r border-gray-100">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">QR Generator Studio</h2>
+                    <p class="text-sm text-gray-500">Create branded assets for campus use.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Target Link</label>
+                        <input type="text" id="text-input" placeholder="https://canvas.ateneo.edu" 
+                            class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#003366] focus:ring-1 focus:ring-[#003366] outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Email Verification</label>
+                        <input type="email" id="email-input" oninput="validateEmail()" placeholder="yourname@ateneo.edu" 
+                            class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#003366] focus:ring-1 focus:ring-[#003366] outline-none transition-all">
+                        <div class="mt-2 flex items-start space-x-2">
+                            <svg class="h-3 w-3 text-gray-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                            <p class="text-[9px] text-gray-400 leading-tight">
+                                Usage is logged in accordance with the <a href="https://www.ateneo.edu/privacy/website-users" target="_blank" class="text-blue-700 underline">Privacy Policy</a>. Required for institutional use.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- LOGO SELECTION -->
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Select Center Logo</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="logo-option cursor-pointer">
+                                <input type="radio" name="logo-choice" value="seal" checked class="hidden">
+                                <div class="border-2 border-gray-100 p-3 rounded-xl flex items-center space-x-3 transition-all hover:bg-gray-50">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" class="h-8 w-8 opacity-70">
+                                    <span class="text-xs font-semibold text-gray-600">University Seal</span>
+                                </div>
+                            </label>
+                            <label class="logo-option cursor-pointer">
+                                <input type="radio" name="logo-choice" value="shield" class="hidden">
+                                <div class="border-2 border-gray-100 p-3 rounded-xl flex items-center space-x-3 transition-all hover:bg-gray-50">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/6211/6211624.png" class="h-8 w-8 opacity-70">
+                                    <span class="text-xs font-semibold text-gray-600">Unit Shield</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="gen-btn" onclick="handleGenerate()" disabled 
+                        class="w-full bg-[#003366] disabled:bg-gray-200 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-[#002244] transition-all transform active:scale-[0.98]">
+                        Generate Branded QR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Side: Preview -->
+            <div class="p-8 md:w-2/5 bg-gray-50 flex flex-col items-center justify-center text-center">
+                <div id="qrcode-wrapper" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div id="qrcode">
+                        <div class="w-48 h-48 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold px-4">Waiting for validation...</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="status" class="mt-4 text-[10px] font-bold text-blue-900 uppercase tracking-widest opacity-0 transition-opacity">
+                    Saved to Database
+                </div>
+                <div id="download-area" class="mt-4 hidden w-full">
+                    <button onclick="downloadQR()" class="w-full border-2 border-[#003366] text-[#003366] font-bold py-2 rounded-lg text-xs hover:bg-blue-50 transition-colors">
+                        Download Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- INSTITUTIONAL FOOTER -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-[11px]">
+            <div class="mb-4 md:mb-0 text-center md:text-left">
+                <p class="font-bold text-gray-600 mb-1">ATENEO DE MANILA UNIVERSITY</p>
+                <p>Katipunan Ave, Quezon City, 1108 Philippines</p>
+            </div>
+            <div class="flex space-x-8 uppercase tracking-widest font-semibold">
+                <a href="https://www.ateneo.edu/privacy/website-users" target="_blank" class="hover:text-blue-900">Privacy</a>
+                <a href="#" class="hover:text-blue-900">Terms</a>
+                <a href="#" class="hover:text-blue-900">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <canvas id="export-canvas" style="display:none;"></canvas>
+
+    <script>
+        const LOGOS = {
+            seal: "https://cdn-icons-png.flaticon.com/512/25/25231.png",
+            shield: "https://cdn-icons-png.flaticon.com/512/6211/6211624.png"
+        };
+
+        function validateEmail() {
+            const email = document.getElementById('email-input').value.toLowerCase();
+            const btn = document.getElementById('gen-btn');
+            btn.disabled = !email.endsWith('ateneo.edu');
+        }
+
+        async function handleGenerate() {
+            const email = document.getElementById('email-input').value;
+            const url = document.getElementById('text-input').value || "https://ateneo.edu";
+            const logoType = document.querySelector('input[name="logo-choice"]:checked').value;
+            const status = document.getElementById('status');
+            const size = 600;
+
+            status.innerText = "Processing...";
+            status.style.opacity = "1";
+
+            // 1. Log to Firestore
+            if (window.saveLogToFirestore) {
+                await window.saveLogToFirestore(email, url);
+            }
+
+            // 2. Clear previous
+            const container = document.getElementById('qrcode');
+            container.innerHTML = "";
+
+            // 3. Generate QR
+            const tempDiv = document.createElement("div");
+            new QRCode(tempDiv, {
+                text: url,
+                width: size,
+                height: size,
+                colorDark: "#003366",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            setTimeout(async () => {
+                const qrCanvas = tempDiv.querySelector('canvas');
+                const exportCanvas = document.getElementById('export-canvas');
+                const ctx = exportCanvas.getContext('2d');
+                
+                exportCanvas.width = size;
+                exportCanvas.height = size;
+
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, size, size);
+                ctx.drawImage(qrCanvas, 0, 0);
+
+                await drawLogo(ctx, size, LOGOS[logoType]);
+
+                const finalImage = exportCanvas.toDataURL("image/png");
+                const previewImg = document.createElement('img');
+                previewImg.src = finalImage;
+                previewImg.className = "w-48 h-48 rounded-lg shadow-inner";
+                container.appendChild(previewImg);
+
+                document.getElementById('download-area').classList.remove('hidden');
+                status.innerText = "Success";
+            }, 100);
+        }
+
+        async function drawLogo(ctx, qrSize, logoUrl) {
+            return new Promise((resolve) => {
+                const logo = new Image();
+                logo.crossOrigin = "anonymous";
+                logo.src = logoUrl;
+                logo.onload = () => {
+                    const logoSize = qrSize * 0.22;
+                    const x = (qrSize - logoSize) / 2;
+                    const y = (qrSize - logoSize) / 2;
+                    ctx.fillStyle = "#ffffff";
+                    const pad = qrSize * 0.02;
+                    ctx.fillRect(x - pad, y - pad, logoSize + pad*2, logoSize + pad*2);
+                    ctx.drawImage(logo, x, y, logoSize, logoSize);
+                    resolve();
+                };
+                logo.onerror = resolve;
+            });
+        }
+
+        function downloadQR() {
+            const canvas = document.getElementById('export-canvas');
+            const link = document.createElement('a');
+            link.download = `ateneo-qr-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
